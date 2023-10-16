@@ -1,0 +1,16 @@
+status: 1
+weights size: 324.0000 GB
+dtogp = 6.9652 s  gtodp = 0.2518 s  compp = 0.7092 s
+Tpre = 6.965 s
+Tpre * l: 6.9652 * 96 = 668.6609
+dtogg = 1.7310 s  gtodg = 0.0008 s  compg = 0.0067 s
+Tgen = 1.731 s
+Tgen * (n-1) * l: 1.7310 * 31 * 96 = 5151.3706
+gpu peak mem (prefill): 16.000 GB / 16.000 GB
+gpu peak mem (gen):     14.315 GB / 16.000 GB
+nvme peak mem:          335.402 GB / 1500.000 GB
+wg = 0.02  wn = 0.98
+cg = 0.00  cn = 1.00
+hg = 1.00  hn = 0.00
+T = 5820.0316 s  generated = 256 tokens
+throughput = 0.04 token/s
