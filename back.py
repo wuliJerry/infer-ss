@@ -110,6 +110,9 @@ def solve_lp(config:CostModelConfig,
                      + (1 / bmm_flops_g) * 4 * bls_tknum * (s + n / 2) * h1 * cg 
 
 
+    # TODO: Figure out the backward computation time
+
+
     gpu_home_p = pulp.LpVariable("gpu_home^p", lowBound=0)
     gpu_w_p = pulp.LpVariable("gpu_w^p", lowBound=0)
     gpu_home_g = pulp.LpVariable("gpu_home^g", lowBound=0)
