@@ -44,6 +44,7 @@ def solve_lp(config:CostModelConfig,
 
     gmem = config.gmem
     nmem = config.nmem
+    cache = config.cache
 
     mm_flops_p = config.mm_flops_p
     mm_flops_g = config.mm_flops_g
@@ -136,6 +137,41 @@ def solve_lp(config:CostModelConfig,
     mlp2g = pulp.LpVariable("mlp2g", lowBound=0)
 
     nvme_peak = pulp.LpVariable("nvme_peak", lowBound=0)
+
+    # Flash-Attention related variable and constraint
+    
+    # Forward
+    cache_peak = pulp.LpVariable("cache_peak", lowBound=0)
+    inter_mem = pulp.LpVariable("B_r * B_c", lowBound=0)
+    # B_c = pulp.LpVariable("B_c", lowBound=0)
+
+    # Memory requirements for matrices Q, K, V
+    Mem_QKV = (s + n) * h1
+    # Memory requirements for intermediate computations
+    # Mem_intermediate = B_r * B_c
+    # Memory requirements for other matrices
+    d = h1 / nh
+    Mem_others = n * (d + 2)
+    # Total memory requirement
+    # cache_peak = l * (Mem_QKV + Mem_intermediate + Mem_others)
+    cache_peak = l * (Mem_QKV + inter_mem + Mem_others)
+
+    # Backward
+    # Add the memory constraint to the LP problem
+    prob += cache_peak <= cache, "Memory Constraint"
+    # Memory requirements for matrices Q, K, V, O
+    Mem_QKVO = 2 * (s + n) * h1
+    # Memory requirements for intermediate computations for backward pass
+    Mem_intermediate_back = inter_mem
+    # Memory requirements for other matrices for backward pass
+    d = h1 / nh
+    Mem_others_back = 3 * n * d + 2 * n
+    # Total memory requirement for backward pass
+    Mem_total_back = l * (Mem_QKVO + Mem_intermediate_back + Mem_others_back)
+    # Add the memory constraint for backward pass to the LP problem
+    prob += Mem_total_back <= cache, "Memory Constraint for Backward Pass"
+
+
 
     ## GPU peak memory constaints
     prob += gpu_home_p == wi * l * wg + 2 * s * h1 * bls_tknum * hg + 4 * (s + n) * h1 * bls_tknum * l * cg
