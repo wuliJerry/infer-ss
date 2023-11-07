@@ -69,6 +69,10 @@ def solve_lp(config:CostModelConfig,
     dtogg = pulp.LpVariable("dtog_i^g", lowBound=0)
     compg = pulp.LpVariable("comp_i^g", lowBound=0)
 
+    T_comp = pulp.LpVariable("T_comp_flash_attn", lowBound=0)
+    T_mem = pulp.LpVariable("T_comp_flash_attn", lowBound=0)
+    T_ops = pulp.LpVariable("T_comp_flash_attn", lowBound=0)
+
     wg = pulp.LpVariable("wg", lowBound=0)
     wn = pulp.LpVariable("wn", lowBound=0)
     cg = pulp.LpVariable("cg", lowBound=0)
@@ -111,6 +115,13 @@ def solve_lp(config:CostModelConfig,
     prob += compg == (1 / mm_flops_g) * bls_tknum * (wi) \
                      + (1 / bmm_flops_g) * 4 * bls_tknum * (s + n / 2) * h1 * cg 
 
+    
+    # Flash-Attention Related Period Constraint
+    prob += T_comp == (1 / bmm_flops_g) * l * nh * s * h1 * n
+    prob += T_mem == ((1 / dtog_bdw) + (1 / gtod_bdw_g)) * l * nh * (s + n)
+    prob += T_ops == l * nh * (1 / mm_flops_g) * s * n
+
+    prob += T_comp + T_mem + T_ops <= T
 
     # TODO: Figure out the backward computation time
 

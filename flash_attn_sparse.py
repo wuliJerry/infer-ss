@@ -56,6 +56,11 @@ def solve_lp(config:CostModelConfig,
     gtod_bdw_hidden_p = config.gtod_bdw_hidden_p
     gtod_bdw_g = config.gtod_bdw_g
 
+    N = ...
+    M = ...
+
+    Sparsity_Factor = N / M
+
     prob = pulp.LpProblem('storage', sense=pulp.LpMinimize)
 
     ## Create variables for cost
@@ -68,6 +73,10 @@ def solve_lp(config:CostModelConfig,
     gtodg = pulp.LpVariable("gtod_i^g", lowBound=0)
     dtogg = pulp.LpVariable("dtog_i^g", lowBound=0)
     compg = pulp.LpVariable("comp_i^g", lowBound=0)
+
+    T_comp = pulp.LpVariable("T_comp_flash_attn", lowBound=0)
+    T_mem = pulp.LpVariable("T_comp_flash_attn", lowBound=0)
+    T_ops = pulp.LpVariable("T_comp_flash_attn", lowBound=0)
 
     wg = pulp.LpVariable("wg", lowBound=0)
     wn = pulp.LpVariable("wn", lowBound=0)
@@ -112,6 +121,14 @@ def solve_lp(config:CostModelConfig,
                      + (1 / bmm_flops_g) * 4 * bls_tknum * (s + n / 2) * h1 * cg 
 
 
+    
+    # Flash-Attention Related Period Constraint
+    prob += T_comp == (1 / bmm_flops_g) * l * nh * s * h1 * n * Sparsity_Factor
+    prob += T_mem == ((1 / dtog_bdw) + (1 / gtod_bdw_g)) * l * nh * (s + n)
+    prob += T_ops == l * nh * (1 / mm_flops_g) * s * n
+
+    prob += T_comp + T_mem + T_ops <= T
+
     # TODO: Figure out the backward computation time
 
 
@@ -144,10 +161,6 @@ def solve_lp(config:CostModelConfig,
     cache_peak = pulp.LpVariable("cache_peak", lowBound=0)
     inter_mem = pulp.LpVariable("B_r * B_c", lowBound=0)
 
-    N = ...
-    M = ...
-
-    Sparsity_Factor = N / M
     # Memory requirements for Q, K, V without sparsity (forward and backward)
     Mem_QKV = (s + n) * h1
     Mem_QKVO = 2 * (s + n) * h1  # Assuming dQ, dK, dV are also stored
